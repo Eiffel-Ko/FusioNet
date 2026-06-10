@@ -2,7 +2,7 @@
 
 FusioNet - A deep learning architecture specifically engineered for financial time series data.
 
-## 1. FusioNet Architecture and Features
+## 1. Architecture and Features
 
 ### Core Features
 FusioNet is a multi-branch fusion neural network architecture designed for financial time series data. Its key features include:
@@ -10,7 +10,7 @@ FusioNet is a multi-branch fusion neural network architecture designed for finan
 * **Multi-module Feature Fusion**: Organically combines Convolutional Neural Networks (CNN), Transformer models, and Long Short-Term Memory (LSTM) networks to simultaneously capture local short-term volatility features and global temporal dependencies in financial data.
 * **Modularity and Scalability**: Specifically designed for complex, non-linear, and volatile financial instruments (e.g., options, futures), providing excellent architectural flexibility and room for expansion.
 
-### Network Topology
+### Network Design
 FusioNet adopts a parallel dual-branch design, followed by sequential integration modules:
 
 1. **Convolution Branch**:
@@ -26,7 +26,11 @@ FusioNet adopts a parallel dual-branch design, followed by sequential integratio
 5. **Output Layer (Fully Connected Layer & Output)**:
    * Maps features to the target dimension through fully connected layers to output the predicted ATMS value for the next time point.
 
-![FusioNet Architecture](./fig/fig_FusioNet_Architecture.png)
+<p align="center">
+  <img src="./fig/fig_FusioNet_Architecture.jpg" width="600">
+  <br>
+  <b>Figure 1: FusioNet Architecture</b>
+</p>
 
 ## 2. ATMS (At-The-Money Synthetic)
 
@@ -49,7 +53,11 @@ $$\text{ATMS}_t = \frac{100}{TX_t} \sum_{i=0}^1 \left( W_{C_i}(C_i - TV_{C_i}) +
 
 > *Note: The $(C_i - TV_{C_i})$ term represents the pure time value after deducting intrinsic value.*
 
-![ATMS Calculation](./fig/fig_ATMS.png)
+<p align="center">
+  <img src="./fig/fig_ATMS.jpg" width="500">
+  <br>
+  <b>Figure 2: ATMS Calculation Logic</b>
+</p>
 
 ## 3. Experimental Design and Model Training
 
@@ -68,7 +76,11 @@ $$\mathcal{L} = \mathcal{L}_{\text{MSE}} \cdot \left(1 + \lambda \cdot [-\log(\t
 
 * **Penalty Mechanism**: As shown in the figure, if the predicted direction is wrong, the WinRate drops, and the negative logarithmic term $[-\log(\text{WinRate} + \epsilon)]$ increases significantly, forcing the total loss to rise exponentially. This guides the model to balance numerical accuracy with trend judgment.
 
-![Loss Function Surface](./fig/fig_Loss_Function.png)
+<p align="center">
+  <img src="./fig/fig_Loss_Function.jpg" width="500">
+  <br>
+  <b>Figure 3: Loss Function Surface</b>
+</p>
 
 ### Training Workflow
 1. **Data Cleaning and Preprocessing**: Clean high-frequency options data, align time features, and compute ATMS-related derivatives.
