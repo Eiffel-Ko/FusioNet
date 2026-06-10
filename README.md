@@ -1,93 +1,90 @@
 # FusioNet
+
 FusioNet - A deep learning architecture specifically engineered for financial time series data.
 
-## 1. FusioNet 架構與特色
+## 1. FusioNet Architecture and Features
 
-### 核心特色
-FusioNet是一種專為金融時間序列資料設計的多分支融合型神經網路架構，其主要特色包括：
-* **多模組特徵融合**：有機結合了卷積神經網路 (CNN)、Transformer 模型與長短期記憶網路 (LSTM)，能同時捕捉金融數據中的局部短期波動特徵與全域時間依賴結構。
-* **高度模組化與擴展性**：專為複雜、非線性且具突變特性的金融商品（如選擇權、期貨）資料設計，提供極佳的架構彈性與擴充空間。
+### Core Features
+FusioNet is a multi-branch fusion neural network architecture designed for financial time series data. Its key features include:
 
-### 網路拓撲架構
-FusioNet 採用並聯雙分支設計，隨後串接時序與全連接模組進行整合：
+* **Multi-module Feature Fusion**: Organically combines Convolutional Neural Networks (CNN), Transformer models, and Long Short-Term Memory (LSTM) networks to simultaneously capture local short-term volatility features and global temporal dependencies in financial data.
+* **Modularity and Scalability**: Specifically designed for complex, non-linear, and volatile financial instruments (e.g., options, futures), providing excellent architectural flexibility and room for expansion.
 
-1. **卷積分支 (Convolution Branch)**：
-   * 由一維卷積層組成。
-   * 用於擷取時間維度上的局部短期特徵（如微幅震盪、局部反轉等技術型態)。
-2. **注意力分支 (Attention Branch)**：
-   * 由 Transformer 編碼器堆疊而成。
-   * 透過自注意力機制捕捉跨時間步的全域交互關聯與長程時序依賴。
-3. **特徵串接層 (Concatenate Layer)**：
-   * 將卷積分支與注意力分支的輸出進行串接融合，使模型能同時兼顧局部細節與全域脈絡。
-4. **時序建模層 (LSTM Model)**：
-   * 將融合後的特徵送入堆疊的 LSTM模組中進行進一步的序列建模，強化對跨時間點連續性特徵的記憶。
-5. **輸出層 (Fully Connected Layer & Output)**：
-   * 最終透過全連接層將特徵映射至目標維度，輸出未來時間點的 ATMS 預測數值。
+### Network Topology
+FusioNet adopts a parallel dual-branch design, followed by sequential integration modules:
 
-![FusioNet Architecture](./docs/fig_FusioNet_Architecture.png)
+1. **Convolution Branch**:
+   * Composed of 1D convolutional layers.
+   * Used to extract local short-term features in the time dimension (e.g., micro-oscillations, local reversals, and other technical patterns).
+2. **Attention Branch**:
+   * Composed of stacked Transformer encoders.
+   * Utilizes self-attention mechanisms to capture global cross-time-step correlations and long-range temporal dependencies.
+3. **Concatenate Layer**:
+   * Merges the outputs from the Convolution and Attention branches, enabling the model to account for both local details and global context.
+4. **LSTM Modeling Layer**:
+   * Feeds the fused features into stacked LSTM modules for further sequence modeling, enhancing the memory of continuous features across time points.
+5. **Output Layer (Fully Connected Layer & Output)**:
+   * Maps features to the target dimension through fully connected layers to output the predicted ATMS value for the next time point.
 
+![FusioNet Architecture](./fig/fig_FusioNet_Architecture.png)
 
+## 2. ATMS (At-The-Money Synthetic)
 
-## 2. ATMS (At-The-Money Synthetic, 價平和)
+### What is ATMS?
+In real-world options markets, due to fixed strike price intervals, it is often difficult to find an option contract with a strike price exactly equal to the current spot price (the "true" At-The-Money contract) when the index fluctuates.
 
-### 什麼是 ATMS？
-在實際的選擇權市場中，由於合約履約價（Strike Price）為固定間隔的級距，當大盤指數波動時，往往難以找到一檔履約價完全等同於當前現價的真正「價平（At-The-Money）」合約。
+To bridge this theoretical and practical gap, this research precisely defines the **ATMS (At-The-Money Synthetic)** index. This index dynamically weights the prices of the nearest available contracts to comprehensively reflect the market's overall expectation of future volatility, capital concentration, and the tension between bulls and bears.
 
-為了解決這個理論與實務上的斷層，本研究精確定義了 **ATMS（價平和）** 指標。此指標，透過動態加權當前最接近現價的數檔合約價格，綜合反映市場對未來波動的整體預期、資金集中情形與多空角力結果。
+### Calculation Mechanism
+The ATMS calculation is based on **linear interpolation** and includes an **intrinsic value deduction mechanism**:
 
-### 計算機制
-ATMS 的計算方法基於**線性插值法**並包含**內含價值扣除機制**，具體步驟如下：
-
-1. **合約選取**：尋找距離當下大盤點位 ($TX_t$) 最近的四檔合約：
-   * 價內第一檔買權 ($C_0$)、價外第一檔買權 ($C_1$)
-   * 價內第一檔賣權 ($P_0$)、價外第一檔賣權 ($P_1$)
-2. **動態權重計算**：依據這四檔合約的履約價與大盤現價之絕對距離，線性插值計算出各自對應的權重（$W_{C_i}$, $W_{P_i}$）。
-3. **純時間價值純化**：將這四檔選擇權的權利金扣除其「內含價值（Intrinsic Value）」，排除大盤移動帶來的線性影響，僅保留純粹反映波動預期的「時間價值（Time Value）」。
-4. **加權與正規化**：將時間價值乘以權重加總後，除以當前大盤點位 ($TX_t$) 進行正規化，並乘上 100 放大數值便於觀察與模型擬合。
+1. **Contract Selection**: Select the four contracts closest to the current market index ($TX_t$):
+   * First ITM Call ($C_0$), First OTM Call ($C_1$)
+   * First ITM Put ($P_0$), First OTM Put ($P_1$)
+2. **Dynamic Weighting**: Calculate weights ($W_{C_i}$, $W_{P_i}$) using linear interpolation based on the absolute distance between the strike prices and the current market index.
+3. **Time Value Purification**: Deduct the "Intrinsic Value" from the premiums of these four options to exclude the linear impact of market index movement, retaining only the "Time Value" that reflects volatility expectations.
+4. **Weighting and Normalization**: Sum the weighted time values, normalize by the current market index ($TX_t$), and multiply by 100 for better observation and model fitting.
 
 $$\text{ATMS}_t = \frac{100}{TX_t} \sum_{i=0}^1 \left( W_{C_i}(C_i - TV_{C_i}) + W_{P_i}(P_i - TV_{P_i}) \right)$$
 
-> *註：公式中 $(C_i - TV_{C_i})$ 項目實為扣除內含價值後之純時間價值。*
+> *Note: The $(C_i - TV_{C_i})$ term represents the pure time value after deducting intrinsic value.*
 
-![ATMS Calculation](./docs/fig_ATMS.png)
+![ATMS Calculation](./fig/fig_ATMS.png)
 
+## 3. Experimental Design and Model Training
 
+### Input and Output Features
+* **Input Features**: A total of **44 feature fields** covering multi-dimensional market information:
+  * **Futures Data**: Open, High, Low, Close, Volume, Rate of Change, etc.
+  * **Market and Volatility Features**: Weighted Index, Realized Volatility.
+  * **ATMS Derivatives**: Current ATMS value, statistical features (Moving Averages, +/- Standard Deviations).
+  * **Time Features**: Time to expiration, time intervals.
+* **Output (Label)**: The model predicts the actual ATMS value for the next time point ($t+1$), framed as a continuous variable regression task.
 
-## 3. 實驗設計與模型訓練
-
-### 輸入與輸出特徵
-* **輸入特徵 (Input Features)**：共採用 **44 個特徵欄位**，涵蓋多維度市場資訊：
-  * **期貨基礎資訊**：開盤價、最高價、最低價、收盤價、成交量、變動率等。
-  * **大盤與波動特徵**：大盤加權指數、實現波動率。
-  * **ATMS 衍生指標**：ATMS 當前值、統計特徵（移動平均、正負標準差等）。
-  * **時間維度特徵**：距離到期日之剩餘交易時間、時間間隔。
-* **輸出目標 (Label)**：模型預測目標為未來下一個時間點 ($t+1$) 的實際 ATMS 數值，屬於連續型變數的回歸（Regression）預測任務。
-
-### 自定義損失函數 (Custom Loss Function)
-在選擇權實務交易中，單純追求均方誤差（MSE）最小化容易導致模型「數值雖接近，但預測方向完全相反」的窘境，進而造成致命的逆勢交易虧損。為此，本研究特別設計了結合**「幅度誤差 (MSE)」**與**「方向勝率 (Win Rate)」**的混合損失函數：
+### Custom Loss Function
+In options trading, minimizing Mean Squared Error (MSE) alone can lead to the "numerically close but directionally opposite" trap. We designed a hybrid loss function combining **"Magnitude Error (MSE)"** and **"Directional Win Rate"**:
 
 $$\mathcal{L} = \mathcal{L}_{\text{MSE}} \cdot \left(1 + \lambda \cdot [-\log(\text{WinRate} + \epsilon)]\right)$$
 
-* **懲罰機制**：如圖所示，當預測方向錯誤導致方向勝率 ($\text{WinRate}$) 下降時，負對數項 $[-\log(\text{WinRate} + \epsilon)]$ 將劇烈放大，迫使總損失（Loss）呈指數級上升。此設計引導模型在訓練過程中，必須同時兼顧「數值預測精度」與「趨勢判斷正確性」。
+* **Penalty Mechanism**: As shown in the figure, if the predicted direction is wrong, the WinRate drops, and the negative logarithmic term $[-\log(\text{WinRate} + \epsilon)]$ increases significantly, forcing the total loss to rise exponentially. This guides the model to balance numerical accuracy with trend judgment.
 
-![Loss Function Surface](./docs/fig_Loss_Function.png)
+![Loss Function Surface](./fig/fig_Loss_Function.png)
 
-### 實驗與訓練流程
-為了確保模型的泛化能力並嚴格防止過擬合（Overfitting），實驗流程規劃如下：
-1. **資料清理與預處理**：高頻期權歷史資料清洗、時間特徵對齊，並計算 ATMS 相關衍生特徵。
-2. **樣本分群與**：為貼合真實交易情況，本研究保留歷史資料中**最後半年的資料作為「連續樣本」**，專用於最終的樣本外驗證（Out-of-Sample Test），實際情況可依照訓練目的進行調整。
-4. **樣本重組與拆分**：將前期資料進行隨機重組打亂（以打破特定時空偏誤），並依 **80%（訓練集）**、**10%（驗證集）**、**10%（測試集）** 比例進行切分，隨後對所有特徵進行標準化（Standardization）處理。
+### Training Workflow
+1. **Data Cleaning and Preprocessing**: Clean high-frequency options data, align time features, and compute ATMS-related derivatives.
+2. **Sample Splitting**: To reflect real-world trading, the **last six months of historical data** are reserved as "continuous samples" for Out-of-Sample testing.
+3. **Resampling**: Shuffle earlier data (to break time-space bias) and split into **80% Training, 10% Validation, and 10% Testing**, followed by standardization of all features.
 
-## 4. 實務量化交易應用
+## 4. Practical Quantitative Trading Applications
 
-預測 ATMS 的變動幅度與方向，能直接轉化為選擇權波動率策略的動態決策與風控依據：
+Predicting the magnitude and direction of ATMS changes directly informs dynamic decisions and risk management for volatility strategies:
 
-* **ATMS 預測擴增（預期波動率上升）**：
-  * 當模型預測未來 ATMS 數值將顯著上升，代表市場預期即將出現劇烈波動。
-  * **交易策略**：系統自動採取波動率擴張策略（例如：**買入勒式策略**），旨在從權利金整體暴漲與波動率噴發中獲利。
-* **ATMS 預測衰減（預期波動率下降）**：
-  * 當模型預測未來 ATMS 數值將萎縮，代表市場預期將進入橫盤縮幅或波動收斂。
-  * **交易策略**：系統切換為時間價值收取策略（例如：**賣出勒式策略**），透過賺取選擇權時間價值的加速流失來取得穩健收益。
-* **交易優化與動態風控**：
-  * **訊號濾網**：可結合多重篩選濾網（例如：限制模型預測之期望利潤須大於 5 點、限制高勝率交易時段）。
-  * **風控機制**：內建動態停損與停利機制，優化實務交易中的盈虧比，確保交易策略的長期期望值為正。
+* **ATMS Prediction Increase (Rising Implied Volatility)**:
+  * Indicates expected sharp market volatility.
+  * **Trading Strategy**: Deploy volatility expansion strategies (e.g., **Long Straddle**), aiming to profit from premium surges and volatility explosions.
+* **ATMS Prediction Decrease (Falling Implied Volatility)**:
+  * Indicates expected range-bound market or volatility convergence.
+  * **Trading Strategy**: Switch to time-value collection strategies (e.g., **Short Straddle**), profiting from the accelerated decay of option time value.
+* **Trading Optimization and Risk Control**:
+  * **Signal Filtering**: Combine filters (e.g., expected profit > 5 points, restricted trading hours).
+  * **Risk Management**: Built-in dynamic stop-loss and take-profit mechanisms to optimize profit-to-loss ratios and ensure long-term positive expected value.
