@@ -2,6 +2,11 @@
 
 FusioNet - A deep learning architecture specifically engineered for financial time series data.
 
+<p align="center">
+  <img src="./fig/FusioNet.jpg">
+  <br>
+</p>
+
 ## 1. Architecture and Features
 
 ### Core Features
