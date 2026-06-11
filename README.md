@@ -100,3 +100,25 @@ Predicting the magnitude and direction of ATMS changes directly informs dynamic 
 * **Trading Optimization and Risk Control**:
   * **Signal Filtering**: Combine filters (e.g., expected profit > 5 points, restricted trading hours).
   * **Risk Management**: Built-in dynamic stop-loss and take-profit mechanisms to optimize profit-to-loss ratios and ensure long-term positive expected value.
+
+
+
+
+---
+
+
+### Data Preparation and Structure Requirements
+
+To ensure consistency in the development and execution of trading strategies, the foundational dataset and its field specifications required for this experiment are as follows:
+
+#### 1. TAIEX Index Data
+* **Frequency:** 1-minute data
+* **Fields:** `["date", "time", "open", "high", "low", "close"]`
+
+#### 2. TAIEX Futures Data
+* **Frequency:** 1-minute data
+* **Fields:** `["date", "time", "contract", "open", "high", "low", "close", "vol"]`
+
+#### 3. TAIEX Options Data
+* **Frequency:** 1-minute data
+* **Fields:** `["date", "time", "contract", "strike_price", "cp", "open", "high", "low", "close", "vol"]`
