@@ -74,51 +74,51 @@ In options trading, minimizing Mean Squared Error (MSE) alone can lead to the "n
 
 $$\mathcal{L} = \mathcal{L}_{\text{MSE}} \cdot \left(1 + \lambda \cdot [-\log(\text{WinRate} + \epsilon)]\right)$$
 
-* **Penalty Mechanism**: As shown in the figure, if the predicted direction is wrong, the WinRate drops, and the negative logarithmic term $[-\log(\text{WinRate} + \epsilon)]$ increases significantly, forcing the total loss to rise exponentially. This guides the model to balance numerical accuracy with trend judgment.
-
+* **Penalty Mechanism**: If the predicted direction is wrong, the WinRate drops, and the negative logarithmic term increases significantly, forcing the total loss to rise exponentially. This guides the model to balance numerical accuracy with trend judgment.
 <p align="center">
   <img src="./fig/fig_Loss_Function.jpg" width="500">
   <br>
   <b>Figure 3: Loss Function Surface</b>
 </p>
 
-### Training Workflow
-1. **Data Cleaning and Preprocessing**: Clean high-frequency options data, align time features, and compute ATMS-related derivatives.
-2. **Sample Splitting**: To reflect real-world trading, the **last six months of historical data** are reserved as "continuous samples" for Out-of-Sample testing.
-3. **Resampling**: Shuffle earlier data (to break time-space bias) and split into **80% Training, 10% Validation, and 10% Testing**, followed by standardization of all features.
+### Data Preparation and Structure Requirements
+
+To ensure consistency in strategy development and execution, the foundational datasets are specified as follows:
+
+| Data Source | Frequency | Key Fields |
+| :--- | :--- | :--- |
+| **TAIEX Index** | 1-min | `date`, `time`, `open`, `high`, `low`, `close` |
+| **TAIEX Futures** | 1-min | `date`, `time`, `contract`, `open`, `high`, `low`, `close`, `vol` |
+| **TAIEX Options** | 1-min | `date`, `time`, `contract`, `strike_price`, `cp`, `open`, `high`, `low`, `close`, `vol` |
+
+
+### Workflow Execution
+
+The project is structured into four sequential Jupyter Notebook modules to ensure experiment reproducibility:
+
+### === Data Cleaning === (`1_data_processing.ipynb`)
+Initial cleaning of raw TAIEX index and futures data. Procedures include filtering non-trading hours.
+
+### === ATMS Feature Calculation === (`2_calculate_ATMS.ipynb`)
+Focuses on core indicator calculation. It uses futures prices to calibrate option strike levels and compute **At-the-Money Synthetic (ATMS)** values.
+
+### === Statistical Feature Extraction === (`3_calculate_std.ipynb`)
+Performs statistical analysis on ATMS indicators. Includes calculating rolling historical averages/standard deviations features.
+
+### === Model Training === (`4_FusionNet_Training.ipynb`)
+Imports the processed feature matrix into the **FusionNet** deep learning model. The model learns the relationships between underlying futures and indicators to output volatility trend predictions.
+
 
 ## 4. Practical Quantitative Trading Applications
 
-Predicting the magnitude and direction of ATMS changes directly informs dynamic decisions and risk management for volatility strategies:
+Predicting ATMS changes informs dynamic decision-making for volatility strategies:
 
-* **ATMS Prediction Increase (Rising Implied Volatility)**:
-  * Indicates expected sharp market volatility.
-  * **Trading Strategy**: Deploy volatility expansion strategies (e.g., **Long Straddle**), aiming to profit from premium surges and volatility explosions.
-* **ATMS Prediction Decrease (Falling Implied Volatility)**:
-  * Indicates expected range-bound market or volatility convergence.
-  * **Trading Strategy**: Switch to time-value collection strategies (e.g., **Short Straddle**), profiting from the accelerated decay of option time value.
-* **Trading Optimization and Risk Control**:
+* **Rising ATMS (Rising Implied Volatility)**:
+  * Indicates expected sharp volatility.
+  * **Trading Strategy**: Deploy volatility expansion strategies (e.g., **Long Straddle**) to profit from premium surges.
+* **Falling ATMS (Falling Implied Volatility)**:
+  * Indicates range-bound markets or volatility convergence.
+  * **Trading Strategy**: Switch to time-value collection strategies (e.g., **Short Straddle**) to profit from accelerated theta decay.
+* **Optimization and Risk Control**:
   * **Signal Filtering**: Combine filters (e.g., expected profit > 5 points, restricted trading hours).
-  * **Risk Management**: Built-in dynamic stop-loss and take-profit mechanisms to optimize profit-to-loss ratios and ensure long-term positive expected value.
-
-
-
-
----
-
-
-### Data Preparation and Structure Requirements
-
-To ensure consistency in the development and execution of trading strategies, the foundational dataset and its field specifications required for this experiment are as follows:
-
-#### 1. TAIEX Index Data
-* **Frequency:** 1-minute data
-* **Fields:** `["date", "time", "open", "high", "low", "close"]`
-
-#### 2. TAIEX Futures Data
-* **Frequency:** 1-minute data
-* **Fields:** `["date", "time", "contract", "open", "high", "low", "close", "vol"]`
-
-#### 3. TAIEX Options Data
-* **Frequency:** 1-minute data
-* **Fields:** `["date", "time", "contract", "strike_price", "cp", "open", "high", "low", "close", "vol"]`
+  * **Risk Management**: Dynamic stop-loss and take-profit mechanisms to optimize profit-to-loss ratios.
